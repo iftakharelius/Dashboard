@@ -236,6 +236,7 @@ let ARXIV = [], NEWS = [], SCHOLAR = {}, META = {};
 let prefs = JSON.parse(localStorage.getItem('dash-prefs') || '{}');
 const PPP = parseInt(prefs.ppp || '20', 10);
 let WEATHER = null;
+const AUTO_SYNC_MS = 6 * 60 * 60 * 1000;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const el  = id => document.getElementById(id);
@@ -448,6 +449,7 @@ el('timestamp').textContent = new Date().toLocaleTimeString('en-US', {hour:'2-di
 if (prefs.tab) switchTab(prefs.tab);
 el('cfg-location').value = prefs.location || 'Boston, MA';
 loadAll();
+setInterval(loadAll, AUTO_SYNC_MS);
 </script>
 </body>
 </html>

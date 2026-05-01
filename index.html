@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Research Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:       #0f0f11;
+    --bg2:      #16161a;
+    --bg3:      #1e1e24;
+    --border:   rgba(255,255,255,0.08);
+    --border2:  rgba(255,255,255,0.14);
+    --text:     #e8e6e0;
+    --text2:    #9b9891;
+    --text3:    #5e5c58;
+    --accent:   #5b8cfa;
+    --accent2:  #38bfa1;
+    --amber:    #f0a030;
+    --red:      #e05a5a;
+    --green:    #5db87a;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', sans-serif;
+    --r:        8px;
+    --rl:       12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+  body { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* ── header ── */
+  .top { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  .top h1 { font-size: 17px; font-weight: 500; letter-spacing: 0.01em; }
+  .top .ts { margin-left: auto; font-size: 12px; font-family: var(--mono); color: var(--text3); }
+  .top .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex-shrink: 0; }
+
+  /* ── tabs ── */
+  .tabs { display: flex; gap: 2px; background: var(--bg2); border-radius: var(--rl); padding: 3px; margin-bottom: 1.75rem; border: 1px solid var(--border); }
+  .tab { flex: 1; text-align: center; font-size: 13px; padding: 7px 0; border-radius: var(--r); cursor: pointer; color: var(--text2); border: none; background: none; font-family: var(--sans); transition: background 0.15s, color 0.15s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--bg3); color: var(--text); font-weight: 500; border: 1px solid var(--border2); }
+
+  /* ── stat cards ── */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1.75rem; }
+  .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
+  .stat .lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+  .stat .val { font-size: 26px; font-weight: 500; font-family: var(--mono); color: var(--text); }
+  .stat .sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* ── section headings ── */
+  .sec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .sec-head h2 { font-size: 12px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .sec-head .cnt { font-size: 11px; font-family: var(--mono); background: var(--bg3); color: var(--text3); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+  .sec-head .rbtn { margin-left: auto; font-size: 12px; font-family: var(--mono); color: var(--text3); cursor: pointer; background: none; border: 1px solid var(--border); border-radius: var(--r); padding: 3px 10px; transition: background 0.15s; }
+  .sec-head .rbtn:hover { background: var(--bg3); color: var(--text2); }
+  .section { margin-bottom: 1.75rem; }
+
+  /* ── paper card ── */
+  .paper { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rl); padding: 13px 15px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+  .paper:hover { border-color: var(--border2); }
+  .paper.hl { border-left: 2px solid var(--accent); }
+  .paper .pt { font-size: 13px; font-weight: 500; line-height: 1.5; margin-bottom: 5px; color: var(--text); }
+  .paper .pa { font-size: 12px; color: var(--text2); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .paper .pmeta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .pill { font-size: 11px; font-family: var(--mono); padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border); color: var(--text3); background: var(--bg3); }
+  .pill.kw  { color: var(--accent); border-color: rgba(91,140,250,0.3); background: rgba(91,140,250,0.08); }
+  .pill.cat { color: var(--accent2); border-color: rgba(56,191,161,0.3); background: rgba(56,191,161,0.08); }
+  .pill.new { color: var(--green); border-color: rgba(93,184,122,0.3); background: rgba(93,184,122,0.08); }
+
+  /* ── news card ── */
+  .news { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rl); padding: 13px 15px; margin-bottom: 8px; cursor: pointer; display: flex; gap: 12px; transition: border-color 0.15s; }
+  .news:hover { border-color: var(--border2); }
+  .news .ndot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); margin-top: 7px; flex-shrink: 0; }
+  .news .nt { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.5; margin-bottom: 3px; }
+  .news .ns { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+
+  /* ── citation card ── */
+  .cite { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rl); padding: 12px 15px; margin-bottom: 8px; }
+  .cite .ct { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 5px; line-height: 1.5; }
+  .cite .cm { display: flex; gap: 12px; font-size: 12px; color: var(--text3); font-family: var(--mono); }
+  .cite .cnum { color: var(--accent); }
+
+  /* ── filter bar ── */
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .filter-bar select, .filter-bar input[type=text] {
+    font-size: 12px; padding: 6px 10px; border-radius: var(--r);
+    border: 1px solid var(--border); background: var(--bg2); color: var(--text2);
+    font-family: var(--mono);
+  }
+  .filter-bar input[type=text] { flex: 1; min-width: 160px; }
+  .filter-bar select:focus, .filter-bar input:focus { outline: none; border-color: var(--border2); }
+  .btn { font-size: 12px; padding: 6px 14px; border-radius: var(--r); border: 1px solid var(--border2); background: var(--bg3); color: var(--text); cursor: pointer; font-family: var(--mono); transition: background 0.15s; }
+  .btn:hover { background: var(--bg2); }
+
+  /* ── config panel ── */
+  .cfg { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rl); padding: 16px 18px; margin-bottom: 14px; }
+  .cfg h3 { font-size: 12px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
+  .cfg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .cfg-row label { font-size: 12px; color: var(--text2); min-width: 110px; font-family: var(--mono); }
+  .cfg-row input { font-size: 12px; padding: 6px 10px; border-radius: var(--r); border: 1px solid var(--border); background: var(--bg3); color: var(--text); flex: 1; min-width: 180px; font-family: var(--mono); }
+  .cfg-row input:focus { outline: none; border-color: var(--border2); }
+  .note { font-size: 12px; color: var(--text3); background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 12px 15px; line-height: 1.7; margin-bottom: 14px; }
+  .note code { font-family: var(--mono); font-size: 11px; background: var(--bg3); padding: 1px 5px; border-radius: 3px; color: var(--accent2); }
+  .note a { color: var(--accent); }
+  .note strong { color: var(--text2); }
+  .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+
+  /* ── states ── */
+  .loading { font-size: 12px; font-family: var(--mono); color: var(--text3); padding: 24px 0; text-align: center; }
+  .err { font-size: 12px; font-family: var(--mono); color: var(--red); background: rgba(224,90,90,0.08); border: 1px solid rgba(224,90,90,0.2); border-radius: var(--r); padding: 8px 12px; }
+  .tag-stale { font-size: 11px; font-family: var(--mono); color: var(--amber); border: 1px solid rgba(240,160,48,0.3); background: rgba(240,160,48,0.08); border-radius: 4px; padding: 1px 6px; margin-left: 6px; }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <span class="dot" id="live-dot"></span>
+  <h1>Research Dashboard</h1>
+  <span class="ts" id="timestamp">—</span>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('overview')">Overview</button>
+  <button class="tab" onclick="switchTab('arxiv')">arXiv</button>
+  <button class="tab" onclick="switchTab('citations')">Citations</button>
+  <button class="tab" onclick="switchTab('settings')">Settings</button>
+</div>
+
+<!-- ═══════════════ OVERVIEW ═══════════════ -->
+<div id="tab-overview">
+  <div class="stats">
+    <div class="stat"><div class="lbl">arXiv today</div><div class="val" id="s-papers">—</div><div class="sub" id="s-papers-sub">papers</div></div>
+    <div class="stat"><div class="lbl">highlighted</div><div class="val" id="s-hl">—</div><div class="sub">keyword matches</div></div>
+    <div class="stat"><div class="lbl">citations</div><div class="val" id="s-cites">—</div><div class="sub" id="s-h-sub">h-index —</div></div>
+    <div class="stat"><div class="lbl">news items</div><div class="val" id="s-news">—</div><div class="sub">physics feeds</div></div>
+  </div>
+
+  <div class="section">
+    <div class="sec-head">
+      <h2>Highlighted papers</h2>
+      <span class="cnt" id="hl-cnt">0</span>
+    </div>
+    <div id="hl-list"><div class="loading">loading...</div></div>
+  </div>
+
+  <div class="section">
+    <div class="sec-head"><h2>Physics news</h2></div>
+    <div id="news-list"><div class="loading">loading...</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ ARXIV ═══════════════ -->
+<div id="tab-arxiv" style="display:none">
+  <div class="filter-bar">
+    <select id="cat-filter">
+      <option value="all">all categories</option>
+      <option value="cond-mat">cond-mat</option>
+      <option value="cond-mat.str-el">cond-mat.str-el</option>
+      <option value="cond-mat.mes-hall">cond-mat.mes-hall</option>
+      <option value="quant-ph">quant-ph</option>
+      <option value="physics">physics</option>
+    </select>
+    <input type="text" id="kw-filter" placeholder="filter by keyword..." />
+    <label style="font-size:12px; color:var(--text3); display:flex; align-items:center; gap:6px;">
+      <input type="checkbox" id="hl-only" /> highlighted only
+    </label>
+  </div>
+  <div id="arxiv-list"><div class="loading">loading...</div></div>
+</div>
+
+<!-- ═══════════════ CITATIONS ═══════════════ -->
+<div id="tab-citations" style="display:none">
+  <div id="scholar-content"><div class="loading">loading citations...</div></div>
+</div>
+
+<!-- ═══════════════ SETTINGS ═══════════════ -->
+<div id="tab-settings" style="display:none">
+
+  <div class="note">
+    Settings here are stored in your browser (<code>localStorage</code>) and used only for display filtering.
+    To change which data gets fetched, edit the <strong>GitHub repository variables</strong>:
+    <code>ARXIV_CATEGORIES</code> and <code>ARXIV_KEYWORDS</code>, and the secret
+    <code>SEMANTIC_SCHOLAR_ID</code>.
+  </div>
+
+  <div class="cfg">
+    <h3>Display preferences</h3>
+    <div class="cfg-row">
+      <label>default tab</label>
+      <select id="cfg-tab" style="font-size:12px; padding:6px 10px; border-radius:var(--r); border:1px solid var(--border); background:var(--bg3); color:var(--text); font-family:var(--mono);">
+        <option value="overview">overview</option>
+        <option value="arxiv">arxiv</option>
+        <option value="citations">citations</option>
+      </select>
+    </div>
+    <div class="cfg-row">
+      <label>papers per page</label>
+      <input type="text" id="cfg-ppp" value="20" style="max-width:80px;" />
+    </div>
+    <div class="cfg-row">
+      <button class="btn" onclick="savePrefs()">save prefs</button>
+      <span id="save-msg" style="font-size:12px; color:var(--green); font-family:var(--mono); display:none;">saved</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="note">
+    <strong>Data freshness:</strong> the GitHub Action runs at 00:00, 06:00, 12:00, 18:00 UTC.
+    Last fetch: <span id="last-fetch" style="color:var(--text2);">—</span><br><br>
+    <strong>To trigger a manual refresh:</strong> go to your repo → Actions →
+    "Fetch Research Data" → "Run workflow".<br><br>
+    <strong>Semantic Scholar ID:</strong> find it at
+    <a href="https://www.semanticscholar.org" target="_blank">semanticscholar.org</a>
+    — search your name, open your profile, copy the number from the URL.
+  </div>
+</div>
+
+<script>
+// ── state ────────────────────────────────────────────────────────────────────
+let ARXIV = [], NEWS = [], SCHOLAR = {}, META = {};
+let prefs = JSON.parse(localStorage.getItem('dash-prefs') || '{}');
+const PPP = parseInt(prefs.ppp || '20', 10);
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+const el  = id => document.getElementById(id);
+const fmt = n  => (n == null ? '—' : n.toLocaleString());
+
+function relTime(iso) {
+  if (!iso) return 'never';
+  const diff = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(diff / 3600000);
+  if (h < 1)  return 'just now';
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+
+function staleTag(iso) {
+  if (!iso) return '';
+  const h = (Date.now() - new Date(iso).getTime()) / 3600000;
+  return h > 14 ? '<span class="tag-stale">stale</span>' : '';
+}
+
+// ── tabs ─────────────────────────────────────────────────────────────────────
+function switchTab(t) {
+  ['overview','arxiv','citations','settings'].forEach(n => {
+    el('tab-'+n).style.display = n === t ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((b,i) => {
+    b.classList.toggle('active', ['overview','arxiv','citations','settings'][i] === t);
+  });
+}
+
+// ── arXiv rendering ──────────────────────────────────────────────────────────
+function paperCard(p) {
+  const div = document.createElement('div');
+  div.className = 'paper' + (p.highlighted ? ' hl' : '');
+  const kws = (p.keyword_hits || []).map(k => `<span class="pill kw">${k}</span>`).join('');
+  div.innerHTML = `
+    <div class="pt">${p.title}</div>
+    <div class="pa">${p.authors || 'authors unlisted'}</div>
+    <div class="pmeta">
+      <span class="pill cat">${p.category}</span>
+      <span class="pill new">new</span>
+      ${kws}
+    </div>`;
+  if (p.link && p.link !== '#') div.onclick = () => window.open(p.link, '_blank');
+  return div;
+}
+
+function renderHighlighted() {
+  const hl = ARXIV.filter(p => p.highlighted);
+  el('hl-cnt').textContent = hl.length;
+  el('s-hl').textContent = hl.length;
+  const list = el('hl-list');
+  list.innerHTML = '';
+  if (!hl.length) { list.innerHTML = '<div class="loading">no keyword matches — check your ARXIV_KEYWORDS setting</div>'; return; }
+  hl.slice(0, 8).forEach(p => list.appendChild(paperCard(p)));
+}
+
+function renderArxivTab() {
+  const cat = el('cat-filter').value;
+  const kw  = el('kw-filter').value.toLowerCase();
+  const hlOnly = el('hl-only').checked;
+  let papers = ARXIV.filter(p => {
+    if (cat !== 'all' && !p.category.startsWith(cat)) return false;
+    if (hlOnly && !p.highlighted) return false;
+    if (kw && !(p.title+p.authors+p.abstract).toLowerCase().includes(kw)) return false;
+    return true;
+  });
+  const list = el('arxiv-list');
+  list.innerHTML = '';
+  if (!papers.length) { list.innerHTML = '<div class="loading">no results</div>'; return; }
+  papers.slice(0, PPP).forEach(p => list.appendChild(paperCard(p)));
+}
+
+// ── news rendering ───────────────────────────────────────────────────────────
+function renderNews() {
+  const list = el('news-list');
+  list.innerHTML = '';
+  el('s-news').textContent = NEWS.length;
+  if (!NEWS.length) { list.innerHTML = '<div class="loading">no news data — Action may not have run yet</div>'; return; }
+  NEWS.forEach(n => {
+    const div = document.createElement('div');
+    div.className = 'news';
+    const d = n.date ? new Date(n.date).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+    div.innerHTML = `<div class="ndot"></div><div><div class="nt">${n.title}</div><div class="ns">${n.source}${d ? ' · '+d : ''}</div></div>`;
+    if (n.link) div.onclick = () => window.open(n.link, '_blank');
+    list.appendChild(div);
+  });
+}
+
+// ── citations rendering ──────────────────────────────────────────────────────
+function renderScholar() {
+  const area = el('scholar-content');
+  if (SCHOLAR.error) {
+    area.innerHTML = `<div class="err">${SCHOLAR.error === 'no author ID configured'
+      ? 'Set your Semantic Scholar author ID in GitHub repo → Settings → Secrets → SEMANTIC_SCHOLAR_ID'
+      : 'Error: ' + SCHOLAR.error}</div>`;
+    return;
+  }
+  el('s-cites').textContent = fmt(SCHOLAR.citationCount);
+  el('s-h-sub').textContent = `h-index ${SCHOLAR.hIndex ?? '—'}`;
+
+  const stale = staleTag(SCHOLAR.fetched_at);
+  area.innerHTML = `
+    <div class="stats" style="margin-bottom:1.5rem;">
+      <div class="stat"><div class="lbl">total citations</div><div class="val">${fmt(SCHOLAR.citationCount)}</div></div>
+      <div class="stat"><div class="lbl">h-index</div><div class="val">${SCHOLAR.hIndex ?? '—'}</div></div>
+      <div class="stat"><div class="lbl">papers</div><div class="val">${fmt(SCHOLAR.paperCount)}</div></div>
+    </div>
+    <div class="sec-head"><h2>top cited papers</h2>${stale}</div>
+    <div id="cite-list"></div>`;
+
+  const clist = el('cite-list');
+  (SCHOLAR.papers || []).forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'cite';
+    div.innerHTML = `<div class="ct">${p.title}</div><div class="cm"><span>${p.year ?? '—'}</span><span class="cnum">${fmt(p.citationCount)} citations</span></div>`;
+    clist.appendChild(div);
+  });
+}
+
+// ── data loading ─────────────────────────────────────────────────────────────
+async function loadJSON(path) {
+  const r = await fetch(path + '?t=' + Date.now());
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+async function loadAll() {
+  try {
+    [ARXIV, NEWS, SCHOLAR, META] = await Promise.all([
+      loadJSON('data/arxiv.json'),
+      loadJSON('data/news.json'),
+      loadJSON('data/scholar.json'),
+      loadJSON('data/meta.json'),
+    ]);
+  } catch(e) {
+    console.error('data load error:', e);
+  }
+
+  el('s-papers').textContent = ARXIV.length;
+  el('timestamp').textContent = META.fetched_at ? relTime(META.fetched_at) : 'no data yet';
+  el('last-fetch').textContent = META.fetched_at
+    ? new Date(META.fetched_at).toLocaleString() + ' UTC' : 'never';
+
+  const live = ARXIV.length > 1 && !ARXIV[0].title.includes('not yet fetched');
+  el('live-dot').style.background = live ? 'var(--green)' : 'var(--amber)';
+  el('live-dot').style.boxShadow   = live ? '0 0 6px var(--green)' : '0 0 6px var(--amber)';
+
+  renderHighlighted();
+  renderNews();
+  renderArxivTab();
+  renderScholar();
+}
+
+// ── settings ─────────────────────────────────────────────────────────────────
+function savePrefs() {
+  prefs.ppp = el('cfg-ppp').value;
+  prefs.tab = el('cfg-tab').value;
+  localStorage.setItem('dash-prefs', JSON.stringify(prefs));
+  const msg = el('save-msg');
+  msg.style.display = 'inline';
+  setTimeout(() => msg.style.display = 'none', 2000);
+}
+
+// ── event listeners ──────────────────────────────────────────────────────────
+el('cat-filter').addEventListener('change',  renderArxivTab);
+el('kw-filter').addEventListener('input',    renderArxivTab);
+el('hl-only').addEventListener('change',     renderArxivTab);
+
+// ── init ─────────────────────────────────────────────────────────────────────
+el('timestamp').textContent = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+if (prefs.tab) switchTab(prefs.tab);
+loadAll();
+</script>
+</body>
+</html>

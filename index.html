@@ -35,6 +35,8 @@
   .top h1 { font-size: 17px; font-weight: 500; letter-spacing: 0.01em; }
   .top .ts { margin-left: auto; font-size: 12px; font-family: var(--mono); color: var(--text3); }
   .top .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex-shrink: 0; }
+  .sync-btn { font-size: 12px; font-family: var(--mono); color: var(--text2); cursor: pointer; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 4px 10px; margin-left: 8px; }
+  .sync-btn:hover { color: var(--text); border-color: var(--border2); }
 
   /* ── tabs ── */
   .tabs { display: flex; gap: 2px; background: var(--bg2); border-radius: var(--rl); padding: 3px; margin-bottom: 1.75rem; border: 1px solid var(--border); }
@@ -119,6 +121,7 @@
   <span class="dot" id="live-dot"></span>
   <h1>Research Dashboard</h1>
   <span class="ts" id="timestamp">—</span>
+  <button class="sync-btn" onclick="manualSync()">sync</button>
 </div>
 
 <div class="tabs">
@@ -135,6 +138,7 @@
     <div class="stat"><div class="lbl">highlighted</div><div class="val" id="s-hl">—</div><div class="sub">keyword matches</div></div>
     <div class="stat"><div class="lbl">citations</div><div class="val" id="s-cites">—</div><div class="sub" id="s-h-sub">h-index —</div></div>
     <div class="stat"><div class="lbl">news items</div><div class="val" id="s-news">—</div><div class="sub">physics feeds</div></div>
+    <div class="stat"><div class="lbl">weather</div><div class="val" id="s-weather">—</div><div class="sub" id="s-weather-sub">not loaded</div></div>
   </div>
 
   <div class="section">
@@ -148,6 +152,10 @@
   <div class="section">
     <div class="sec-head"><h2>Physics news</h2></div>
     <div id="news-list"><div class="loading">loading...</div></div>
+  </div>
+  <div class="section">
+    <div class="sec-head"><h2>Weather</h2></div>
+    <div id="weather-box" class="note">loading weather...</div>
   </div>
 </div>
 
@@ -200,6 +208,10 @@
       <input type="text" id="cfg-ppp" value="20" style="max-width:80px;" />
     </div>
     <div class="cfg-row">
+      <label>weather city</label>
+      <input type="text" id="cfg-location" value="Boston, MA" style="max-width:220px;" />
+    </div>
+    <div class="cfg-row">
       <button class="btn" onclick="savePrefs()">save prefs</button>
       <span id="save-msg" style="font-size:12px; color:var(--green); font-family:var(--mono); display:none;">saved</span>
     </div>
@@ -223,6 +235,8 @@
 let ARXIV = [], NEWS = [], SCHOLAR = {}, META = {};
 let prefs = JSON.parse(localStorage.getItem('dash-prefs') || '{}');
 const PPP = parseInt(prefs.ppp || '20', 10);
+let WEATHER = null;
+const AUTO_SYNC_MS = 6 * 60 * 60 * 1000;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const el  = id => document.getElementById(id);
@@ -343,6 +357,36 @@ function renderScholar() {
   });
 }
 
+function weatherCodeToText(code) {
+  const map = { 0:'clear', 1:'mostly clear', 2:'partly cloudy', 3:'overcast', 45:'fog', 48:'rime fog', 51:'light drizzle', 53:'drizzle', 55:'heavy drizzle', 61:'light rain', 63:'rain', 65:'heavy rain', 71:'light snow', 73:'snow', 75:'heavy snow', 80:'rain showers', 81:'heavy showers', 82:'violent showers', 95:'thunderstorm' };
+  return map[code] || 'unknown';
+}
+
+async function loadWeather() {
+  const location = prefs.location || 'Boston, MA';
+  const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1`);
+  const geo = await g.json();
+  if (!geo.results || !geo.results.length) throw new Error('location not found');
+  const place = geo.results[0];
+  const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`);
+  const data = await w.json();
+  WEATHER = { place, current: data.current };
+}
+
+function renderWeather() {
+  const box = el('weather-box');
+  if (!WEATHER || !WEATHER.current) {
+    el('s-weather').textContent = '—';
+    el('s-weather-sub').textContent = 'unavailable';
+    box.innerHTML = 'Weather unavailable. Set a valid city in Settings (for example: <code>Boston, MA</code>).';
+    return;
+  }
+  const c = WEATHER.current;
+  el('s-weather').textContent = `${Math.round(c.temperature_2m)}°F`;
+  el('s-weather-sub').textContent = `${WEATHER.place.name}, ${WEATHER.place.country_code}`;
+  box.innerHTML = `<strong>${WEATHER.place.name}</strong> · ${weatherCodeToText(c.weather_code)}<br>Temp: ${Math.round(c.temperature_2m)}°F · Humidity: ${c.relative_humidity_2m}% · Wind: ${Math.round(c.wind_speed_10m)} mph`;
+}
+
 // ── data loading ─────────────────────────────────────────────────────────────
 async function loadJSON(path) {
   const r = await fetch(path + '?t=' + Date.now());
@@ -375,16 +419,24 @@ async function loadAll() {
   renderNews();
   renderArxivTab();
   renderScholar();
+  try { await loadWeather(); } catch (e) { console.error('weather load error:', e); WEATHER = null; }
+  renderWeather();
 }
 
 // ── settings ─────────────────────────────────────────────────────────────────
 function savePrefs() {
   prefs.ppp = el('cfg-ppp').value;
   prefs.tab = el('cfg-tab').value;
+  prefs.location = el('cfg-location').value;
   localStorage.setItem('dash-prefs', JSON.stringify(prefs));
   const msg = el('save-msg');
   msg.style.display = 'inline';
   setTimeout(() => msg.style.display = 'none', 2000);
+}
+
+async function manualSync() {
+  el('timestamp').textContent = 'syncing...';
+  await loadAll();
 }
 
 // ── event listeners ──────────────────────────────────────────────────────────
@@ -395,7 +447,9 @@ el('hl-only').addEventListener('change',     renderArxivTab);
 // ── init ─────────────────────────────────────────────────────────────────────
 el('timestamp').textContent = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
 if (prefs.tab) switchTab(prefs.tab);
+el('cfg-location').value = prefs.location || 'Boston, MA';
 loadAll();
+setInterval(loadAll, AUTO_SYNC_MS);
 </script>
 </body>
 </html>
